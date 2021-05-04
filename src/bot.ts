@@ -1,12 +1,9 @@
 //use this code along with "npm i dotenv to reference a dotenv file"
 require("dotenv").config()
 // node fetch needed to make fetch requests
-const fetch = require('node-fetch');
+import fetch from 'node-fetch'
 //btoa is used for auth
-const btoa = require('btoa');
-// blizzard auth libraries
-var BnetStrategy = require('passport-bnet').Strategy;
-const passport = require('passport');
+import btoa from 'btoa'
 
 
 const discord_token = process.env.DISCORDJS_BOT_TOKEN
@@ -44,7 +41,8 @@ async function refreshBlizzardToken(){
     params.append('grant_type', 'client_credentials');
     // params.append('code', code);
     // execute request
-    const requestOptions = {
+    // TODO: create requestOptions Interface
+    const requestOptions:any = {
         method: 'POST',
         body: params,
         headers
@@ -67,8 +65,8 @@ async function refreshBlizzardToken(){
  * @param {string} server_name the name of the server/realm that the user belongs to
  * @param {string} character_name the name of the character
  */
-async function getCharacterData(server_name, character_name, token = ''){
-    let response
+async function getCharacterData(serverName:string, characterName:string, token:string = ''){
+    let response:any
     // TODO: check if the current token needs to be refreshed
     if(!token){
         let data = await refreshBlizzardToken()
@@ -76,9 +74,11 @@ async function getCharacterData(server_name, character_name, token = ''){
         token = data.token
     }
     try{
-        response = await fetch(`https://us.api.blizzard.com/profile/wow/character/${server_name}/${character_name}?namespace=profile-us&locale=en_US&access_token=${token}`)
-            .catch(error => console.log(`Unable to get data for server ${server_name} and character ${character_name}. Error: ${error}`))
-    }catch{error => console.log(error)}
+        response = await fetch(`https://us.api.blizzard.com/profile/wow/character/${serverName}/${characterName}?namespace=profile-us&locale=en_US&access_token=${token}`)
+            .catch(error => console.log(`Unable to get data for server ${serverName} and character ${characterName}. Error: ${error}`))
+    }catch(error:any){
+        console.log(error)
+    }
     
     if(response.status === '401'){
         console.log('We need to refresh the Blizzard token')
@@ -92,34 +92,35 @@ async function getCharacterData(server_name, character_name, token = ''){
  * @param {string} server_name the name of the server/realm that the guild belongs to
  * @param {string} guild_name the name of the guild
  */
-async function getGuildRoster(server_name, guild_name){
+async function getGuildRoster(serverName:string, guildName:string){
     // TODO: check if the current token needs to be refreshed
     let data = await refreshBlizzardToken()
     token = data.token
-    let url = `https://us.api.blizzard.com/data/wow/guild/${server_name}/${guild_name}/roster?namespace=profile-us&locale=en_US&access_token=${token}`
-    let response = await fetch(url)
-        .catch(error => console.log(`Unable to get data for server ${server_name} and guild ${guild_name}. Error: ${error}`))
+    let url = `https://us.api.blizzard.com/data/wow/guild/${serverName}/${guildName}/roster?namespace=profile-us&locale=en_US&access_token=${token}`
+    let response:any = await fetch(url)
+        .catch(error => console.log(`Unable to get data for server ${serverName} and guild ${guildName}. Error: ${error}`))
     if(response.status === '401'){
         console.log('We need to refresh the Blizzard token')
     }
-    let guild_data = await response.json()
-    return guild_data
+    let guildData = await response.json()
+    return guildData
 }
 
 /**
  * Get the current item level associated with the WOW character
- * @param {charcter data object} message the message object given in the on message event
+ * @param {character data object} message the message object given in the on message event
  */
-async function getWowItemLevel(character_data){
-    return character_data.equipped_item_level 
+async function getWowItemLevel(characterData:any){
+    return characterData.equipped_item_level 
 }
 
 /**
  * Get the current item level associated with the WOW character
- * @param {charcter data object} message the message object given in the on message event
+ * @param {character data object} message the message object given in the on message event
  */
-async function getWowLevel(character_data){
-    return character_data.level 
+// TODO: create interface for characterData
+async function getWowLevel(characterData:any){
+    return characterData.level 
 }
 
 /**
@@ -128,79 +129,80 @@ async function getWowLevel(character_data){
  * @param {string} character_name the name of the character
  * @param {message object} message the message object given in the on message event
  */
-async function getWowCovenant(server_name, character_name, message){
+async function getWowCovenant(serverName:string, characterName:string, message:any){
     let data = await getCharacterData(
-        server_name,
-        character_name
+        serverName,
+        characterName
     );
-    message.channel.send(`${character_name} - ${server_name} - ${data.covenant_progress.chosen_covenant.name} - renown: ${data.covenant_progress.renown_level}`)
+    message.channel.send(`${characterName} - ${serverName} - ${data.covenant_progress.chosen_covenant.name} - renown: ${data.covenant_progress.renown_level}`)
     return true 
 }
 
-async function getAuctions(connectedRealmId, itemId){
+async function getAuctions(connectedRealmId: number, itemId:number){
     let data = await refreshBlizzardToken()
-    let access_token = data.token
-    let url = `https://us.api.blizzard.com/data/wow/connected-realm/${connectedRealmId}/auctions?namespace=dynamic-us&locale=en_US&access_token=${access_token}`
-    let response = await fetch(url)
-        .catch(error => console.log(`Unable to get id for item ${item_name} and guild ${guild_name}. Error: ${error}`))
+    let accessToken = data.token
+    let url = `https://us.api.blizzard.com/data/wow/connected-realm/${connectedRealmId}/auctions?namespace=dynamic-us&locale=en_US&access_token=${accessToken}`
+    let response:any = await fetch(url)
+        .catch(error => console.log(`Unable to get auctions. Error: ${error}`))
     if(response.status === '401'){
         console.log('We need to refresh the Blizzard token')
     }
     let result = await response.json()
     let auctions = result.auctions
-    let currentAuctions = auctions.filter(auction => auction.item.id === itemId)
+    // TODO: create interface for auction
+    let currentAuctions = auctions.filter((auction:any) => auction.item.id === itemId)
     return currentAuctions
 }
 
-async function getConnectedRealmId(){
+async function getConnectedRealmId(realmName: string){
     //TODO: use connected realm api to figure this out
     // gorefiend's id is 53
     return 53
 }
 
-async function getItemId(item_name){
+async function getItemId(itemName: string){
     // TODO: need to url encode the item name
-    let item_name_encoded = item_name.replace(' ', '%20').replace('-', '%20').toLowerCase()
+    let itemNameEncoded = itemName.replace(' ', '%20').replace('-', '%20').toLowerCase()
     // let item_name_encoded = "grim%20veiled"
     // item_name_encoded = item_name_encoded.replace('%20pants', '')
-    console.log(`item: ${item_name_encoded}`)
+    console.log(`item: ${itemNameEncoded}`)
     let data = await refreshBlizzardToken()
     let access_token = data.token
     console.log(`searching page 1`)
-    let url = `https://us.api.blizzard.com/data/wow/search/item?namespace=static-us&locale=en_US&name.en_US=${item_name_encoded}&orderby=name.en_US&_page=1&access_token=${access_token}`
-    let response = await fetch(url)
-        .catch(error => console.log(`Unable to get id for item ${item_name} and guild ${guild_name}. Error: ${error}`))
+    let url = `https://us.api.blizzard.com/data/wow/search/item?namespace=static-us&locale=en_US&name.en_US=${itemNameEncoded}&orderby=name.en_US&_page=1&access_token=${access_token}`
+    let response:any = await fetch(url)
+        .catch(error => console.log(`Unable to get id for item ${itemName}. Error: ${error}`))
     if(response.status === '401'){
         console.log('We need to refresh the Blizzard token')
     }
     let item_search_data = await response.json()
     let pages = item_search_data.pageCount
     for(let result of item_search_data.results){
-        if(result.data.name.en_US === item_name){
+        if(result.data.name.en_US === itemName){
             return result.data.media.id
         }
     }
     // Since we've already searched page 1, we can start with the second page
-    for(page = 2; page <= pages;page++){
+    for(let page = 2; page <= pages;page++){
         // todo: can be made into a function
         console.log(`searching page ${page}`)
-        let url = `https://us.api.blizzard.com/data/wow/search/item?namespace=static-us&locale=en_US&name.en_US=${item_name_encoded}&orderby=name.en_US&_page=${page}&access_token=${access_token}`
-        let response = await fetch(url)
-            .catch(error => console.log(`Unable to get id for item ${item_name} and guild ${guild_name}. Error: ${error}`))
+        let url = `https://us.api.blizzard.com/data/wow/search/item?namespace=static-us&locale=en_US&name.en_US=${itemNameEncoded}&orderby=name.en_US&_page=${page}&access_token=${access_token}`
+        let response:any = await fetch(url)
+            .catch(error => console.log(`Unable to get id for item ${itemName}. Error: ${error}`))
         if(response.status === '401'){
             console.log('We need to refresh the Blizzard token')
         }
         let item_search_data = await response.json()
         for(let result of item_search_data.results){
-            if(result.data.name.en_US === item_name){
+            if(result.data.name.en_US === itemName){
                 return result.data.media.id
             }
         }
     }
     return "not found"
 }
-
-function parseAuctions(auctions, message){
+// TODO: create auctions interface
+function parseAuctions(auctions:any, message:any){
     let msg = ''
     let context = {
         1: 'Normal Dungeon',
@@ -245,13 +247,13 @@ function parseAuctions(auctions, message){
  * @param {string} guild_name the name of the guild
  * @param {message object} message the message object given in the on message event
  */
-async function checkItemLevelsOfGuild(server_name, guild_name, message){
+async function checkItemLevelsOfGuild(serverName:string, guildName:string, message:any){
     let data = await getGuildRoster(
-        server_name,
-        guild_name
+        serverName,
+        guildName
     );
     try{
-        await data.members.forEach(async (member) => {
+        await data.members.forEach(async (member:any) => {
             //dev code
             
             let character_name = member.character.name.toLowerCase()
@@ -264,8 +266,8 @@ async function checkItemLevelsOfGuild(server_name, guild_name, message){
                 message.channel.send(`${character_name} is at or over 171`)
             }
         });
-    }catch{
-        error => console.log(error)
+    }catch(err:any){
+        console.log(err.message)
     }
     console.log('Done!')
     return true 
@@ -276,7 +278,7 @@ async function checkItemLevelsOfGuild(server_name, guild_name, message){
  * @param {array} args array of args received after the command
  * @param {message object} message the message object given in the on message event
  */
-function kickUser(args, message){
+function kickUser(args:string[], message:any){
     // TODO: get id by name of user
     let id = args[0]
     const member = message.guild.members.cache.get(id)
@@ -285,18 +287,19 @@ function kickUser(args, message){
     // kick the member
     member.kick()
     //handle the promise 
-    .then((member) => {
+    // TODO create member object
+    .then((member:any) => {
         message.channel.send(`${member} was kicked`)
         return true
     })
     // handle errors
-    .catch((err) => {
+    .catch((err:any) => {
         console.log(`Error kicking user: ${err}`)
         message.channel.send('The user does not have permissions to kick')
     })
 }
 
-function banUser(args, message){
+function banUser(args:string[], message:any){
     // TODO: get id by name of user
     let id = args[0]
     const member = message.guild.members.cache.get(id)
@@ -305,17 +308,17 @@ function banUser(args, message){
     // kick the member
     member.guild.members.ban(id)
         //handle the promise 
-        .then((member) => {
+        .then((member:any) => {
             message.channel.send(`${member} was kicked`)
         })
         // handle errors
-        .catch((err) => {
+        .catch((err:any) => {
             console.log(`Error kicking user: ${err}`)
             message.channel.send('The user does not have permissions to kick')
         })
 }
-
-client.on('message', async (message) => {
+// TODO: create a message interface
+client.on('message', async (message:any) => {
     // boolean that simply returns if the user is a bot
     // this helps us ignore any commands given by the bot
     if(message.author.bot) return;
@@ -329,20 +332,20 @@ client.on('message', async (message) => {
             //split string on every breaker
             .split('|')
             //variables
-            let server_name, character_name, guild_name, itemLevel, character_data, item_name, item_id, connectedRealmId
+            let server_name, character_name, guild_name, itemLevel, character_data, item_name, itemId, connectedRealmId
         switch(command_name){
             
             case 'hello':
                 message.channel.send("whattup")
-                break;result
+                break;
             case 'item':
                 // if(args.length === 0) return message.channel.send('Please provide the name of the item to search\nEx: $item garrosh')
                 item_name = args[0]
                 itemId = await getItemId(item_name)
                 console.log(`item: ${itemId}`)
-                realm_name = "Gorefiend"
-                connectedRealmId = await getConnectedRealmId(realm_name)
-                currentAuctions = await getAuctions(connectedRealmId, itemId)
+                let realmName: string = "Gorefiend"
+                connectedRealmId = await getConnectedRealmId(realmName)
+                let currentAuctions = await getAuctions(connectedRealmId, itemId)
                 parseAuctions(currentAuctions, message)
                 // itemLevel = await getWowItemLevel(character_data)
                 // message.channel.send(`The ID of the item is `)
