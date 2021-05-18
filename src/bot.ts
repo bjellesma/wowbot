@@ -4,7 +4,8 @@ require("dotenv").config()
 import fetch from 'node-fetch'
 //btoa is used for auth
 import btoa from 'btoa'
-
+// classes
+import { MythicTrap } from './mythicTrap'
 
 const discord_token = process.env.DISCORDJS_BOT_TOKEN
 const blizzard_client_id=process.env.BLIZZARD_CLIENT_ID
@@ -24,6 +25,21 @@ client.on('ready', () => {
     console.log(`${client.user.username} has logged in`)
 })
 
+function getHelpMessages(command: string = ''){
+    let helpMessage:string = '';
+    
+    if(command){
+        switch(command){
+            case 'tip':
+                let mythicTrap: MythicTrap = new MythicTrap();
+                helpMessage += mythicTrap.getHelp()
+        }
+    }else{
+        // TODO return all help messages
+    }
+    console.log(`message: ${helpMessage}`)
+    return helpMessage;
+}
 /**
  * refresh the blizzard token using the client id and secret
  */
@@ -49,10 +65,16 @@ async function refreshBlizzardToken(){
     };
 
     const url = 'https://us.battle.net/oauth/token'
-    let response = await fetch(
-        url,
-        requestOptions
-    )
+    let response: any
+    try{
+        response = await fetch(
+            url,
+            requestOptions
+        ).catch(error => console.log(`Unable to refresh token. Error: ${error}`))
+    }catch(error:any){
+        console.log(error)
+    }
+    
     let data = await response.json()
     return {
         'token': data.access_token,
@@ -247,14 +269,15 @@ function parseAuctions(auctions:any, message:any){
  * @param {string} guild_name the name of the guild
  * @param {message object} message the message object given in the on message event
  */
-async function checkItemLevelsOfGuild(serverName:string, guildName:string, message:any){
+async function checkItemLevelsOfGuild(serverName:string, guildName:string, message:any, cutoffCharacterLevel = 60, cutoffItemLevel:number = 204){
     let data = await getGuildRoster(
         serverName,
         guildName
     );
+    message.channel.send(`Checking Members of ${guildName} that are at or over ${cutoffItemLevel}. This may take some time...`)
+    let discordMessage:string = ''
     try{
         await data.members.forEach(async (member:any) => {
-            //dev code
             
             let character_name = member.character.name.toLowerCase()
             // if(character_name !== 'amaryl') return
@@ -262,14 +285,16 @@ async function checkItemLevelsOfGuild(serverName:string, guildName:string, messa
             let character_data = await getCharacterData(server_name, character_name)
             let itemLevel = await getWowItemLevel(character_data)
             let characterLevel = await getWowLevel(character_data)
-            if(characterLevel === 60 && itemLevel>=171){
-                message.channel.send(`${character_name} is at or over 171`)
+            if(characterLevel === cutoffCharacterLevel && itemLevel>=cutoffItemLevel){
+                message.channel.send(`${character_name} is at or over ${cutoffItemLevel}\n`)
             }
+
         });
+        await message.channel.send('Finished parsing characters')
     }catch(err:any){
         console.log(err.message)
     }
-    console.log('Done!')
+    
     return true 
 }
 
@@ -333,6 +358,7 @@ client.on('message', async (message:any) => {
             .split('|')
             //variables
             let server_name, character_name, guild_name, itemLevel, character_data, item_name, itemId, connectedRealmId
+            let helpMessage: string = ''
         switch(command_name){
             
             case 'hello':
@@ -384,8 +410,14 @@ client.on('message', async (message:any) => {
             case 'worldquest':
                 message.channel.send('https://www.wowhead.com/world-quests/sl/na')
                 break;
+            case 'tip':
+                message.channel.send(getHelpMessages('tip'))
+                break;
             case 'help':
-                message.channel.send('Available Commands:\n$hello - display friendly greeting\n$ilvl - first arg is the server name, second arg is the character name - this will display the equipped item level for the character')
+                
+                helpMessage = getHelpMessages()
+                message.channel.send(helpMessage)
+                // message.channel.send('Available Commands:\n$hello - display friendly greeting\n$ilvl - first arg is the server name, second arg is the character name - this will display the equipped item level for the character')
         }
         // message.channel.send(command_name)
         // message.channel.send(args)
