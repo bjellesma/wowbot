@@ -19,7 +19,8 @@
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.1",
     "passport": "^0.4.1",
-    "passport-bnet": "^2.0.0"
+    "passport-bnet": "^2.0.0",
+    "prettier": "^2.3.0"
   },
   "devDependencies": {
     "@types/btoa": "^1.2.3",
