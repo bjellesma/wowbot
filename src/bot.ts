@@ -515,49 +515,7 @@ client.on('message', async (message: any) => {
                     role: role
                 });
                 message.channel.send(link);
-                let response: any = await fetch(link, {
-                    method: 'GET'
-                }).catch((error) =>
-                    console.log(`Unable to refresh token. Error: ${error}`)
-                );
-                let data = await response.text();
-                console.log(data);
-                const exampleEmbed = new MessageEmbed()
-                    .setColor('#0099ff')
-                    .setTitle('Some title')
-                    .setURL(link)
-                    .setAuthor(
-                        'Some name',
-                        'https://i.imgur.com/wSTFkRM.png',
-                        'https://discord.js.org'
-                    )
-                    .setDescription('Some description here')
-                    .setThumbnail('https://i.imgur.com/wSTFkRM.png')
-                    .addFields(
-                        {
-                            name: 'Regular field title',
-                            value: 'Some value here'
-                        },
-                        { name: '\u200B', value: '\u200B' },
-                        {
-                            name: 'Inline field title',
-                            value: 'Some value here',
-                            inline: true
-                        },
-                        {
-                            name: 'Inline field title',
-                            value: 'Some value here',
-                            inline: true
-                        }
-                    )
-                    .addField('Inline field title', 'Some value here', true)
-                    .setImage('https://i.imgur.com/wSTFkRM.png')
-                    .setTimestamp()
-                    .setFooter(
-                        'Some footer text here',
-                        'https://i.imgur.com/wSTFkRM.png'
-                    );
-                message.channel.send(exampleEmbed);
+
                 break;
             case 'help':
                 helpMessage = getHelpMessages();
