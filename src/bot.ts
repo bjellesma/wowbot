@@ -5,7 +5,8 @@ import fetch from 'node-fetch';
 //btoa is used for auth
 import btoa from 'btoa';
 // classes
-import { MythicTrap } from './mythicTrap';
+import { MythicTrap } from './Commands/MythicTrap';
+import { Encounters } from './Commands/Encounters';
 
 const discord_token = process.env.DISCORDJS_BOT_TOKEN;
 const blizzard_client_id = process.env.BLIZZARD_CLIENT_ID;
@@ -517,6 +518,10 @@ client.on('message', async (message: any) => {
                 message.channel.send(link);
 
                 break;
+            case 'encounter':
+                let encounters = new Encounters();
+                let encounter = await encounters.getEncounter(89);
+                console.log(encounter);
             case 'help':
                 helpMessage = getHelpMessages();
                 message.channel.send(helpMessage);

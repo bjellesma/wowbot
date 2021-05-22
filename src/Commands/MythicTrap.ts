@@ -1,4 +1,4 @@
-import { CommandClass } from './CommandClass';
+import { CommandClass } from '../Models/CommandClass';
 
 interface MythicTrapLink {
     raidName: string;
