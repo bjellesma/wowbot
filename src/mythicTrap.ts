@@ -1,3 +1,5 @@
+import { CommandClass } from './CommandClass';
+
 interface MythicTrapLink {
     raidName: string;
     bossName: string;
@@ -5,7 +7,7 @@ interface MythicTrapLink {
     role: string;
 }
 
-export class MythicTrap {
+export class MythicTrap implements CommandClass {
     help: string = `Sends a link to mythictrap.com for the specific boss.\n
     Parameters:\n
         Raid Name: The name of the raid\n
