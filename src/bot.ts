@@ -473,10 +473,18 @@ client.on('message', async (message: any) => {
 
                 break;
             case 'encounter':
+                let instanceName = args[0];
+                bossName = args[1];
                 let encounters = new Encounters();
                 let embed = new MessageEmbed();
-                embed = await encounters.parseEncounter(2393, embed);
+                //get encounter id with search
+                let encounterId: number = await encounters.searchEnounters(
+                    instanceName,
+                    bossName
+                );
+                embed = await encounters.parseEncounter(encounterId, embed);
                 message.channel.send(embed);
+                break;
             case 'help':
                 helpMessage = getHelpMessages();
                 message.channel.send(helpMessage);
