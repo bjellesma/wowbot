@@ -2,19 +2,15 @@
 require('dotenv').config();
 // node fetch needed to make fetch requests
 import fetch from 'node-fetch';
-//btoa is used for auth
-import btoa from 'btoa';
 // classes
 import { MythicTrap } from './Commands/MythicTrap';
 import { Encounters } from './Commands/Encounters';
+import { Blizzard } from './Security/Blizzard';
 
 const discord_token = process.env.DISCORDJS_BOT_TOKEN;
-const blizzard_client_id = process.env.BLIZZARD_CLIENT_ID;
-const blizzard_client_secret = process.env.BLIZZARD_CLIENT_SECRET;
-const redirectUri = 'https://localhost:8080';
-const scopes = ['wow.profile'];
 const prefix = '$';
 let token;
+const blizzardObject = new Blizzard();
 
 //class to interact with discord api
 const { Client, MessageEmbed } = require('discord.js');
@@ -41,47 +37,6 @@ function getHelpMessages(command: string = '') {
     return helpMessage;
 }
 /**
- * refresh the blizzard token using the client id and secret
- */
-async function refreshBlizzardToken() {
-    // build headers
-    const basicAuth = btoa(`${blizzard_client_id}:${blizzard_client_secret}`);
-    const headers = {
-        authorization: `Basic ${basicAuth}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-    };
-    // build request body
-    const params = new URLSearchParams();
-    params.append('redirect_uri', redirectUri);
-    params.append('scope', scopes.join(' '));
-    params.append('grant_type', 'client_credentials');
-    // params.append('code', code);
-    // execute request
-    // TODO: create requestOptions Interface
-    const requestOptions: any = {
-        method: 'POST',
-        body: params,
-        headers
-    };
-
-    const url = 'https://us.battle.net/oauth/token';
-    let response: any;
-    try {
-        response = await fetch(url, requestOptions).catch((error) =>
-            console.log(`Unable to refresh token. Error: ${error}`)
-        );
-    } catch (error: any) {
-        console.log(error);
-    }
-
-    let data = await response.json();
-    return {
-        token: data.access_token,
-        expiration: data.expires_in
-    };
-}
-
-/**
  * Get the profile data associated with the WOW character
  * @param {string} server_name the name of the server/realm that the user belongs to
  * @param {string} character_name the name of the character
@@ -92,9 +47,8 @@ async function getCharacterData(
     token: string = ''
 ) {
     let response: any;
-    // TODO: check if the current token needs to be refreshed
     if (!token) {
-        let data = await refreshBlizzardToken();
+        let data = await blizzardObject.refreshBlizzardToken();
 
         token = data.token;
     }
@@ -124,7 +78,7 @@ async function getCharacterData(
  */
 async function getGuildRoster(serverName: string, guildName: string) {
     // TODO: check if the current token needs to be refreshed
-    let data = await refreshBlizzardToken();
+    let data = await blizzardObject.refreshBlizzardToken();
     token = data.token;
     let url = `https://us.api.blizzard.com/data/wow/guild/${serverName}/${guildName}/roster?namespace=profile-us&locale=en_US&access_token=${token}`;
     let response: any = await fetch(url).catch((error) =>
@@ -175,7 +129,7 @@ async function getWowCovenant(
 }
 
 async function getAuctions(connectedRealmId: number, itemId: number) {
-    let data = await refreshBlizzardToken();
+    let data = await blizzardObject.refreshBlizzardToken();
     let accessToken = data.token;
     let url = `https://us.api.blizzard.com/data/wow/connected-realm/${connectedRealmId}/auctions?namespace=dynamic-us&locale=en_US&access_token=${accessToken}`;
     let response: any = await fetch(url).catch((error) =>
@@ -208,7 +162,7 @@ async function getItemId(itemName: string) {
     // let item_name_encoded = "grim%20veiled"
     // item_name_encoded = item_name_encoded.replace('%20pants', '')
     console.log(`item: ${itemNameEncoded}`);
-    let data = await refreshBlizzardToken();
+    let data = await blizzardObject.refreshBlizzardToken();
     let access_token = data.token;
     console.log(`searching page 1`);
     let url = `https://us.api.blizzard.com/data/wow/search/item?namespace=static-us&locale=en_US&name.en_US=${itemNameEncoded}&orderby=name.en_US&_page=1&access_token=${access_token}`;
@@ -520,8 +474,9 @@ client.on('message', async (message: any) => {
                 break;
             case 'encounter':
                 let encounters = new Encounters();
-                let encounter = await encounters.getEncounter(89);
-                console.log(encounter);
+                let embed = new MessageEmbed();
+                embed = await encounters.parseEncounter(2393, embed);
+                message.channel.send(embed);
             case 'help':
                 helpMessage = getHelpMessages();
                 message.channel.send(helpMessage);

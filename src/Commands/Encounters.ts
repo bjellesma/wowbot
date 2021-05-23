@@ -3,14 +3,15 @@ import { Blizzard } from '../Security/Blizzard';
 // node fetch needed to make fetch requests
 import fetch from 'node-fetch';
 
+import { EmbedField } from '../Models/DiscordObjects';
+
 const blizzardObject = new Blizzard();
 export class Encounters {
     help: string = `Get the encounter information for a certain encounter.\n
     Parameters:\n
-        Raid Name: The name of the raid\n
+        Instance Name: The name of the raid\n
         Boss Name: The name of the boss\n
         Difficulty: The difficulty of the encounter\n
-        Role: The role to display tips for\n
     Example:\n
     $tip|castleNathria|shriekwing|heroic|dps\n
     `;
@@ -19,13 +20,46 @@ export class Encounters {
         return this.help;
     }
 
-    async getEncounter(encounterId: number): Promise<String> {
+    async searchEnounters(instanceName: string, bossName: string) {
+        let data = await blizzardObject.refreshBlizzardToken();
+        let accessToken = data.token;
+        let url = `https://us.api.blizzard.com/data/wow/search/journal-encounter?namespace=static-us&locale=en_US&instance.name.en_US=${instanceName}&orderby=id&_page=1&access_token=${accessToken}`;
+        let response: any = await fetch(url).catch((error) =>
+            console.log(`Unable to get encounter. Error: ${error}`)
+        );
+        return response.json();
+    }
+
+    async getEncounter(encounterId: number): Promise<any> {
         let data = await blizzardObject.refreshBlizzardToken();
         let accessToken = data.token;
         let url = `https://us.api.blizzard.com/data/wow/journal-encounter/${encounterId}?namespace=static-us&locale=en_US&access_token=${accessToken}`;
         let response: any = await fetch(url).catch((error) =>
-            console.log(`Unable to get auctions. Error: ${error}`)
+            console.log(`Unable to get encounter. Error: ${error}`)
         );
         return response.json();
+    }
+
+    async parseEncounter(encounterId: number, embed: any): Promise<any> {
+        const encounter = await this.getEncounter(encounterId);
+        let embedFields: EmbedField[] = [];
+        embed.setTitle(encounter.name);
+        encounter?.sections.forEach((section: any) => {
+            embedFields.push({
+                name: section.title,
+                value: section?.body_text || 'No Text'
+            });
+            if (section?.sections) {
+                section.sections.forEach((innerSection: any) => {
+                    embedFields.push({
+                        name: innerSection.title,
+                        value: innerSection?.body_text || 'No Text',
+                        inline: true
+                    });
+                });
+            }
+        });
+        embed.addFields(embedFields);
+        return embed;
     }
 }
